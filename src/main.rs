@@ -3,6 +3,7 @@ use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::egui::{Id, Sense, Widget};
 
 // TODO: move constant to separate file
 const SETTINGS_WINDOW_WIDTH: f32 = 180.;
@@ -30,6 +31,7 @@ struct UiState {
     theta_label: String,
     e_value: f32,
     b_value: f32,
+    is_window_focused: bool
 }
 
 fn main() {
@@ -55,12 +57,15 @@ fn ui_setup(
     mut ui_state: ResMut<UiState>,
     mut ctx: EguiContexts,
 ) {
-    egui::Window::new("Settings")
+
+    ui_state.is_window_focused = false;
+
+    let window_response = egui::Window::new("Settings")
         .max_width(SETTINGS_WINDOW_WIDTH)
         .default_width(SETTINGS_WINDOW_WIDTH)
         .show(ctx.ctx_mut(), |ui| {
-            ui.add(egui::Slider::new(&mut ui_state.e_value, 0.0..=E_MAX_VALUE).text("E"));
-            ui.add(egui::Slider::new(&mut ui_state.b_value, 0.0..=B_MAX_VALUE).text("B"));
+            let e_slider = ui.add(egui::Slider::new(&mut ui_state.e_value, 0.0..=E_MAX_VALUE).text("E"));
+            let b_slider = ui.add(egui::Slider::new(&mut ui_state.b_value, 0.0..=B_MAX_VALUE).text("B"));
 
             ui.horizontal(|ui| {
                 ui.label("φ: ");
@@ -72,7 +77,19 @@ fn ui_setup(
                 ui.text_edit_singleline(&mut ui_state.theta_label);
             });
 
-        });
+            if ui.interact(ui.max_rect(), Id::new("CUM"), Sense::drag()).dragged() ||
+                e_slider.dragged() ||
+                b_slider.dragged() {
+                ui_state.is_window_focused = true;
+            }
+
+
+        }).unwrap().response;
+
+    if window_response.dragged() {
+        ui_state.is_window_focused = true;
+    }
+
 }
 
 fn setup(mut commands: Commands) {
@@ -132,8 +149,9 @@ fn camera_controls(
     mut mouse_motion_events: EventReader<MouseMotion>,
     buttons: Res<ButtonInput<MouseButton>>,
     mut query: Query<(&mut Transform, &mut CameraAngles), With<Camera3d>>,
+    ui_state: ResMut<UiState>
 ) {
-    if !buttons.pressed(MouseButton::Left) {
+    if !buttons.pressed(MouseButton::Left) || ui_state.is_window_focused {
         return;
     }
     let (mut transform, mut angles) = query.single_mut();
