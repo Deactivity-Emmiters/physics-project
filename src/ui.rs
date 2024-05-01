@@ -7,12 +7,57 @@ use crate::structs::{CameraAngles, UiState};
 
 
 pub fn camera_controls(
+    time: Res<Time>,
     mut mouse_motion_events: EventReader<MouseMotion>,
-    buttons: Res<ButtonInput<MouseButton>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    keyboard_buttons: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut Transform, &mut CameraAngles), With<Camera3d>>,
     ui_state: ResMut<UiState>
 ) {
-    if !buttons.pressed(MouseButton::Left) || ui_state.is_window_focused {
+    if ui_state.is_window_focused {
+        return;
+    }
+
+    let mut horizontal_axis = Vec3::new(0.0, 0.0, 0.0);
+    let mut vertical_axis = Vec3::new(0.0, 0.0, 0.0);
+    let mut depth_axis = Vec3::new(0.0, 0.0, 0.0);
+
+    if keyboard_buttons.pressed(KeyCode::KeyW) {
+        vertical_axis.z += -1.0;
+    }
+
+    if keyboard_buttons.pressed(KeyCode::KeyS) {
+        vertical_axis.z += 1.0;
+    }
+
+    if keyboard_buttons.pressed(KeyCode::KeyA) {
+        horizontal_axis.x += -1.0;
+    }
+
+    if keyboard_buttons.pressed(KeyCode::KeyD) {
+        horizontal_axis.x += 1.0;
+    }
+
+    if keyboard_buttons.pressed(KeyCode::ShiftLeft) {
+        depth_axis.y += -1.0;
+    }
+
+    if keyboard_buttons.pressed(KeyCode::Space) {
+        depth_axis.y += 1.0;
+    }
+
+    let mut movement = horizontal_axis + vertical_axis + depth_axis;
+    if movement.length() > 0.0 {
+        movement = movement.normalize();
+    }
+
+    for (mut transform, angles) in query.iter_mut() {
+        let rotation = angles.horizontal;
+        let movement = rotation.mul_vec3(movement);
+        transform.translation += movement * constants::CAMERA_SPEED * time.delta_seconds();
+    }
+
+    if !mouse_buttons.pressed(MouseButton::Left) {
         return;
     }
     let (mut transform, mut angles) = query.single_mut();

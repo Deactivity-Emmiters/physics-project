@@ -1,17 +1,15 @@
 #![allow(dead_code)]
 
 mod constants;
-mod structs;
 mod physics;
+mod structs;
 mod ui;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use physics::{move_by_magnetic_fields};
 use structs::{CameraAngles, Electron, MagneticField, SpawnTimer, UiState, Velocity};
-use ui::{camera_controls, ui_setup, change_background_color};
-
-
+use ui::{camera_controls, change_background_color, ui_setup};
 
 fn main() {
     App::new()
@@ -19,7 +17,10 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(LogDiagnosticsPlugin::default())
         .insert_resource(ClearColor(Color::rgb(255.0, 255.0, 255.0)))
-        .insert_resource(structs::SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
+        .insert_resource(structs::SpawnTimer(Timer::from_seconds(
+            0.5,
+            TimerMode::Repeating,
+        )))
         .insert_resource(Time::<Fixed>::from_hz(200.0))
         .init_resource::<UiState>()
         .add_plugins(EguiPlugin)
@@ -39,9 +40,7 @@ fn main() {
         .run();
 }
 
-
-
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
     commands.spawn((
         Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 50.0)),
@@ -58,6 +57,18 @@ fn setup(mut commands: Commands) {
     commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
     commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
     commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
+
+    // global light
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 1000.0,
+            ..default()
+        },
+        transform: Transform::from_rotation(Quat::from_euler(EulerRot::ZYX, 0.0, -0.9, -1.5)),
+        ..default()
+    });
+
+    ambient_light.brightness = 400.0;
 }
 
 fn spawn_electrons(
