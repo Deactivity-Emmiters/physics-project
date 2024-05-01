@@ -26,6 +26,7 @@ pub fn camera_controls(
 pub fn ui_setup(
     mut ui_state: ResMut<UiState>,
     mut ctx: EguiContexts,
+    mut clear_color: ResMut<ClearColor>,
 ) {
 
     ui_state.is_window_focused = false;
@@ -53,7 +54,14 @@ pub fn ui_setup(
                 ui_state.is_window_focused = true;
             }
 
-
+            if ui.button("Change colour").clicked() {
+                clear_color.0 = match clear_color.0 {
+                    Color::DARK_GRAY => Color::ANTIQUE_WHITE,
+                    Color::ANTIQUE_WHITE => Color::WHITE,
+                    Color::WHITE => Color::DARK_GRAY,
+                    _ => Color::WHITE,
+                };
+            }
         }).unwrap().response;
 
     if window_response.dragged() {
