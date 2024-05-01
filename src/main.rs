@@ -29,7 +29,7 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     // Import the custom texture.
-    let custom_texture_handle: Handle<Image> = asset_server.load("textures\\nanzert_left.png");
+    let custom_texture_handle: Handle<Image> = asset_server.load("textures/nanzert_left.png");
     // Create and save a handle to the mesh.
     let cube_mesh_handle: Handle<Mesh> = meshes.add(create_cube_mesh());
 
