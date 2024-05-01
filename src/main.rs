@@ -1,46 +1,22 @@
 #![allow(dead_code)]
 
 mod constants;
-
+mod structs;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_egui::egui::{Id, Sense};
+use structs::{CameraAngles, Electron, MagneticField, SpawnTimer, UiState, Velocity};
 
-#[derive(Component)]
-struct Electron;
 
-#[derive(Component)]
-struct Velocity(Vec3);
-
-#[derive(Resource)]
-struct SpawnTimer(Timer);
-
-#[derive(Component)]
-struct CameraAngles {
-    vertical: Quat,
-    horizontal: Quat,
-}
-
-#[derive(Component)]
-struct MagneticField(Vec3);
-
-#[derive(Default, Resource)]
-struct UiState {
-    phi_label: String,
-    theta_label: String,
-    e_value: f32,
-    b_value: f32,
-    is_window_focused: bool
-}
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(LogDiagnosticsPlugin::default())
-        .insert_resource(SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
+        .insert_resource(structs::SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
         .insert_resource(Time::<Fixed>::from_hz(200.0))
         .init_resource::<UiState>()
         .add_plugins(EguiPlugin)
