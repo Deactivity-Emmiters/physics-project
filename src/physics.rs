@@ -40,7 +40,7 @@ pub fn rotate(vec: Vec3, angle_speed_vec: Vec3, time_delta: f32) -> Vec3 {
         + angle_speed_vec * angle_speed_vec.dot(vec) * (1.0 - (angle_speed * time_delta).cos())
 }
 
-pub fn apply_magnetic_fields(
+pub fn move_by_magnetic_fields(
     time: Res<Time>,
     fields: Query<&MagneticField>,
     mut electorns: Query<(&mut Transform, &mut Velocity), With<Electron>>,
@@ -48,21 +48,26 @@ pub fn apply_magnetic_fields(
     for (mut transform, mut velocity) in electorns.iter_mut() {
         for field in fields.iter() {
             let acceleration = velocity.0.cross(field.0);
-            accelerate(
-                transform.as_mut(),
-                velocity.as_mut(),
-                acceleration,
-                time.delta_seconds(),
-            );
-            // let r = -velocity.0.dot(velocity.0) / acceleration.dot(acceleration) * acceleration;
-            // let ortogonal = r.cross(velocity.0);
-            // let angle_speed = acceleration / r.dot(r);
-            // let rotation = Quat::from_axis_angle(ortogonal.normalize(), angle_speed.length() * time.delta_seconds());
-            //
-            // // transform.translation += rotate(r, angle_speed, time.delta_seconds()) - r;
-            // // velocity.0 = rotate(velocity.0, angle_speed, time.delta_seconds());
-            // transform.translation += rotation * r - r;
-            // velocity.0 = rotation * velocity.0;
+
+            // составляющая ортогональная магнитному полю
+            let mut vel_ort = velocity.0 - velocity.0.dot(field.0) * field.0;
+            // радиус-вектор движения по дуге (рассматриваем плоскость перпендикулярную магнитному полю)
+            let r = -vel_ort.dot(vel_ort) / acceleration.dot(acceleration) * acceleration;
+            // угловая скорость
+            let angle_speed = r.cross(vel_ort) / r.dot(r);
+
+            // перемещение по известным радиус-вектору, угловой скорости и времени
+            transform.translation += rotate(r, angle_speed, time.delta_seconds()) - r;
+            // обновление ортогональной составляющей (тело движется по окружности и меняет свой вектор скорости)
+            vel_ort = rotate(vel_ort, angle_speed, time.delta_seconds());
+
+            // составляющая параллельная магнитному полю, на нее не влияет сила Лоренца
+            let vel_ = velocity.0 - vel_ort;
+            // передвижение задаваемое ею
+            transform.translation += vel_ * time.delta_seconds();
+
+            // возвращаем актуальную скорость
+            velocity.0 = vel_ + vel_ort;
         }
     }
 }

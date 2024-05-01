@@ -7,7 +7,7 @@ mod ui;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use physics::{apply_magnetic_fields, move_by_velocity};
+use physics::{move_by_magnetic_fields};
 use structs::{CameraAngles, Electron, MagneticField, SpawnTimer, UiState, Velocity};
 use ui::{camera_controls, ui_setup, change_background_color};
 
@@ -28,9 +28,9 @@ fn main() {
             FixedUpdate,
             (
                 spawn_electrons,
-                move_by_velocity,
+                // move_by_velocity,
                 // apply_gravity,
-                apply_magnetic_fields,
+                move_by_magnetic_fields,
             ),
         )
         .add_systems(Update, camera_controls)
