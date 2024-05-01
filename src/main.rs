@@ -86,11 +86,6 @@ fn setup(mut commands: Commands) {
             horizontal: Quat::from_rotation_y(0.0),
         },
     ));
-    // Falling balls
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
-        ..Default::default()
-    });
 }
 
 fn spawn_electrons(
