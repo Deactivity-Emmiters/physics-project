@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use physics::{apply_magnetic_fields, move_by_velocity};
 use structs::{CameraAngles, Electron, MagneticField, SpawnTimer, UiState, Velocity};
-use ui::{camera_controls, ui_setup};
+use ui::{camera_controls, ui_setup, change_background_color};
 
 
 
@@ -18,6 +18,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(LogDiagnosticsPlugin::default())
+        .insert_resource(ClearColor(Color::rgb(255.0, 255.0, 255.0)))
         .insert_resource(structs::SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
         .insert_resource(Time::<Fixed>::from_hz(200.0))
         .init_resource::<UiState>()
@@ -34,6 +35,7 @@ fn main() {
         )
         .add_systems(Update, camera_controls)
         .add_systems(Update, ui_setup)
+        .add_systems(Update, change_background_color)
         .run();
 }
 

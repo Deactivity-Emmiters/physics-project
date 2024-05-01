@@ -61,3 +61,13 @@ pub fn ui_setup(
     }
 
 }
+
+
+pub fn change_background_color(input: Res<ButtonInput<KeyCode>>, mut clear_color: ResMut<ClearColor>) {
+    if input.just_pressed(KeyCode::F1) {
+        clear_color.0 = Color::DARK_GRAY;
+    }
+    if input.just_pressed(KeyCode::F2) {
+        clear_color.0 = Color::ANTIQUE_WHITE;
+    }
+}
