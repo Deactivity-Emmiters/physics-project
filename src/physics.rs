@@ -51,6 +51,9 @@ pub fn move_by_magnetic_fields(
 
             // составляющая ортогональная магнитному полю
             let mut vel_ort = velocity.0 - velocity.0.dot(field.0) * field.0;
+            // составляющая параллельная магнитному полю, на нее не влияет сила Лоренца
+            let vel_ = velocity.0 - vel_ort;
+
             // радиус-вектор движения по дуге (рассматриваем плоскость перпендикулярную магнитному полю)
             let r = -vel_ort.dot(vel_ort) / acceleration.dot(acceleration) * acceleration;
             // угловая скорость
@@ -61,8 +64,6 @@ pub fn move_by_magnetic_fields(
             // обновление ортогональной составляющей (тело движется по окружности и меняет свой вектор скорости)
             vel_ort = rotate(vel_ort, angle_speed, time.delta_seconds());
 
-            // составляющая параллельная магнитному полю, на нее не влияет сила Лоренца
-            let vel_ = velocity.0 - vel_ort;
             // передвижение задаваемое ею
             transform.translation += vel_ * time.delta_seconds();
 
