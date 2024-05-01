@@ -1,15 +1,12 @@
 #![allow(dead_code)]
 
+mod constants;
+
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_egui::egui::{Id, Sense};
-
-// TODO: move constant to separate file
-const SETTINGS_WINDOW_WIDTH: f32 = 180.;
-const E_MAX_VALUE: f32 = 10.0;
-const B_MAX_VALUE: f32 = 10.0;
 
 #[derive(Component)]
 struct Electron;
@@ -70,11 +67,11 @@ fn ui_setup(
     ui_state.is_window_focused = false;
 
     let window_response = egui::Window::new("Settings")
-        .max_width(SETTINGS_WINDOW_WIDTH)
-        .default_width(SETTINGS_WINDOW_WIDTH)
+        .max_width(constants::SETTINGS_WINDOW_WIDTH)
+        .default_width(constants::SETTINGS_WINDOW_WIDTH)
         .show(ctx.ctx_mut(), |ui| {
-            let e_slider = ui.add(egui::Slider::new(&mut ui_state.e_value, 0.0..=E_MAX_VALUE).text("E"));
-            let b_slider = ui.add(egui::Slider::new(&mut ui_state.b_value, 0.0..=B_MAX_VALUE).text("B"));
+            let e_slider = ui.add(egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE).text("E"));
+            let b_slider = ui.add(egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE).text("B"));
 
             ui.horizontal(|ui| {
                 ui.label("φ: ");
