@@ -189,7 +189,7 @@ fn camera_controls(
         angles.vertical *= Quat::from_rotation_x(-event.delta.y * 0.002);
         angles.horizontal *= Quat::from_rotation_y(-event.delta.x * 0.002);
     }
-    transform.rotation = angles.vertical * angles.horizontal;
+    transform.rotation = angles.horizontal * angles.vertical;
 }
 
 fn rotate(vec: Vec3, angle_speed_vec: Vec3, time_delta: f32) -> Vec3 {
