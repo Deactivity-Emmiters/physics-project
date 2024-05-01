@@ -3,6 +3,13 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::egui::{Id, Sense};
+
+// TODO: move constant to separate file
+const SETTINGS_WINDOW_WIDTH: f32 = 180.;
+const E_MAX_VALUE: f32 = 10.0;
+const B_MAX_VALUE: f32 = 10.0;
 
 #[derive(Component)]
 struct Electron;
@@ -22,6 +29,15 @@ struct CameraAngles {
 #[derive(Component)]
 struct MagneticField(Vec3);
 
+#[derive(Default, Resource)]
+struct UiState {
+    phi_label: String,
+    theta_label: String,
+    e_value: f32,
+    b_value: f32,
+    is_window_focused: bool
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -29,6 +45,8 @@ fn main() {
         .add_plugins(LogDiagnosticsPlugin::default())
         .insert_resource(SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
         .insert_resource(Time::<Fixed>::from_hz(200.0))
+        .init_resource::<UiState>()
+        .add_plugins(EguiPlugin)
         .add_systems(Startup, setup)
         .add_systems(
             FixedUpdate,
@@ -40,7 +58,47 @@ fn main() {
             ),
         )
         .add_systems(Update, camera_controls)
+        .add_systems(Update, ui_setup)
         .run();
+}
+
+fn ui_setup(
+    mut ui_state: ResMut<UiState>,
+    mut ctx: EguiContexts,
+) {
+
+    ui_state.is_window_focused = false;
+
+    let window_response = egui::Window::new("Settings")
+        .max_width(SETTINGS_WINDOW_WIDTH)
+        .default_width(SETTINGS_WINDOW_WIDTH)
+        .show(ctx.ctx_mut(), |ui| {
+            let e_slider = ui.add(egui::Slider::new(&mut ui_state.e_value, 0.0..=E_MAX_VALUE).text("E"));
+            let b_slider = ui.add(egui::Slider::new(&mut ui_state.b_value, 0.0..=B_MAX_VALUE).text("B"));
+
+            ui.horizontal(|ui| {
+                ui.label("φ: ");
+                ui.text_edit_singleline(&mut ui_state.phi_label);
+            });
+
+            ui.horizontal(|ui| {
+                ui.label("θ: ");
+                ui.text_edit_singleline(&mut ui_state.theta_label);
+            });
+
+            if ui.interact(ui.max_rect(), Id::new("CUM"), Sense::drag()).dragged() ||
+                e_slider.dragged() ||
+                b_slider.dragged() {
+                ui_state.is_window_focused = true;
+            }
+
+
+        }).unwrap().response;
+
+    if window_response.dragged() {
+        ui_state.is_window_focused = true;
+    }
+
 }
 
 fn setup(mut commands: Commands) {
@@ -121,8 +179,9 @@ fn camera_controls(
     mut mouse_motion_events: EventReader<MouseMotion>,
     buttons: Res<ButtonInput<MouseButton>>,
     mut query: Query<(&mut Transform, &mut CameraAngles), With<Camera3d>>,
+    ui_state: ResMut<UiState>
 ) {
-    if !buttons.pressed(MouseButton::Left) {
+    if !buttons.pressed(MouseButton::Left) || ui_state.is_window_focused {
         return;
     }
     let (mut transform, mut angles) = query.single_mut();
