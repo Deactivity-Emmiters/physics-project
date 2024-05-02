@@ -4,13 +4,16 @@ mod constants;
 mod physics;
 mod structs;
 mod ui;
+use crate::physics::move_by_velocity;
+use crate::structs::{Plate, PlateCathode};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use physics::{move_by_magnetic_fields};
-use structs::{CameraAngles, Electron, MagneticField, SpawnTimer, UiState, Velocity};
+use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, move_by_magnetic_fields};
+use structs::{
+    CameraAngles, Electron, MagneticField, PlateDestructionField, SpawnTimer, UiState, Velocity,
+};
 use ui::{camera_controls, change_background_color, ui_setup};
-use crate::physics::move_by_velocity;
 
 fn main() {
     App::new()
@@ -22,17 +25,20 @@ fn main() {
             0.5,
             TimerMode::Repeating,
         )))
-        .insert_resource(Time::<Fixed>::from_hz(200.0))
+        .insert_resource(Time::<Fixed>::from_hz(2000.0))
         .init_resource::<UiState>()
         .add_plugins(EguiPlugin)
         .add_systems(Startup, setup)
         .add_systems(
             FixedUpdate,
             (
-                spawn_electrons,
+                // spawn_electrons,
                 move_by_velocity,
                 // apply_gravity,
                 move_by_magnetic_fields,
+                apply_cathode_electric_field,
+                apply_desruction_field,
+                cathodes_spawn_electrons,
             ),
         )
         .add_systems(Update, camera_controls)
@@ -41,7 +47,12 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
+fn setup(
+    mut commands: Commands,
+    mut ambient_light: ResMut<AmbientLight>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     commands.spawn((
         Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 50.0)),
@@ -55,9 +66,9 @@ fn setup(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
 
     commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
     commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
-    commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
-    commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
-    commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
+    // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
+    // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
+    // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
 
     // global light
     commands.spawn(DirectionalLightBundle {
@@ -70,6 +81,40 @@ fn setup(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
     });
 
     ambient_light.brightness = 400.0;
+
+    // cathode plate
+    let plate_cathode = PlateCathode {
+        e_field: 10.0,
+        emmisivness: 10,
+    };
+    let plate = Plate {
+        height: 200.0,
+        width: 30.0,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: Vec3::new(10.0, 0.0, 0.0),
+        rotation: Quat::from_rotation_y(0.5 * std::f32::consts::PI),
+        ..default()
+    };
+    let destruct_field = PlateDestructionField { depth: 0.2 };
+    let mesh = meshes.add(Mesh::from(Cuboid::new(
+        plate.width,
+        plate.height,
+        plate.depth,
+    )));
+
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material: materials.add(Color::rgb(0.0, 1.0, 0.0)),
+            transform: plate_transform,
+            ..Default::default()
+        },
+        plate_cathode,
+        plate,
+        destruct_field,
+    ));
 }
 
 fn spawn_electrons(
@@ -94,6 +139,6 @@ fn spawn_electrons(
             ..Default::default()
         },
         Electron,
-        Velocity(Vec3::new(0.0, -10.0, 1.0)),
+        Velocity(Vec3::new(39.0, 0.0, 0.0)),
     ));
 }

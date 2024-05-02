@@ -18,6 +18,25 @@ pub struct CameraAngles {
 #[derive(Component)]
 pub struct MagneticField(pub Vec3);
 
+#[derive(Component)]
+pub struct PlateCathode {
+    pub e_field: f32,
+    pub emmisivness: u32,
+}
+
+#[derive(Component)]
+pub struct Plate {
+    pub height: f32,
+    pub width: f32,
+    pub depth: f32,
+}
+
+#[derive(Component)]
+pub struct PlateDestructionField {
+    pub depth: f32,
+}
+
+
 #[derive(Default, Resource)]
 pub struct UiState {
     pub phi_label: String,
