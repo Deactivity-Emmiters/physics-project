@@ -75,11 +75,11 @@ pub fn ui_setup(
     ui_state.is_window_focused = false;
 
     let window_response = egui::Window::new("Settings")
-        .max_width(constants::SETTINGS_WINDOW_WIDTH * 3.0)
+        .max_width(constants::SETTINGS_WINDOW_WIDTH)
         .default_width(constants::SETTINGS_WINDOW_WIDTH)
-        .max_height(constants::SETTINGS_WINDOW_HEIGHT * 5.0)
+        .max_height(constants::SETTINGS_WINDOW_HEIGHT)
         .default_height(constants::SETTINGS_WINDOW_HEIGHT)
-        .resizable(true)
+        .resizable(false)
         .show(ctx.ctx_mut(), |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 // Здесь размещаете содержимое, которое может растягиваться вниз
