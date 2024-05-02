@@ -5,15 +5,15 @@ mod physics;
 mod structs;
 mod ui;
 use crate::physics::move_by_velocity;
-use crate::structs::{Plate, PlateCathode};
+use crate::structs::{MagnetFieldArrow, Plate, PlateCathode};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, electon_repulsion, move_by_magnetic_fields};
+use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, electon_repulsion, move_by_magnetic_fields, update_electric_field, update_magnetic_field};
 use structs::{
     CameraAngles, Electron, MagneticField, PlateDestructionField, SpawnTimer, UiState, Velocity,
 };
-use ui::{camera_controls, change_background_color, ui_setup};
+use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
 
 fn main() {
     App::new()
@@ -26,7 +26,13 @@ fn main() {
             TimerMode::Repeating,
         )))
         .insert_resource(Time::<Fixed>::from_hz(500.0))
-        .init_resource::<UiState>()
+        .insert_resource(UiState {
+            phi_value: 0.0,
+            theta_value: 0.0,
+            e_value: 2.0,
+            b_value: 1.0,
+            is_window_focused: false,
+        })
         .add_plugins(EguiPlugin)
         .add_systems(Startup, setup)
         .add_systems(
@@ -40,6 +46,9 @@ fn main() {
                 apply_desruction_field,
                 cathodes_spawn_electrons,
                 electon_repulsion,
+                update_magnetic_field,
+                update_electric_field,
+                update_magnet_arrow,
             ),
         )
         .add_systems(Update, camera_controls)
@@ -66,7 +75,7 @@ fn setup(
     ));
 
     commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
-    commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
+    // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
     // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
     // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
     // commands.spawn(MagneticField(Vec3::new(0.0, 0.0, 1.0)));
@@ -230,6 +239,20 @@ fn setup(
         plate,
         PlateDestructionField { depth: 1.0 },
     ));
+
+    // magnet field arrow
+    // arrow mesh
+    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 0.3, 1.0)));
+    let material = materials.add(Color::rgb(0.0, 0.0, 1.0));
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material,
+            ..Default::default()
+        },
+        MagnetFieldArrow,
+    ));
+
 }
 
 fn spawn_electrons(

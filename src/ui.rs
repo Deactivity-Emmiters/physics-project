@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::structs::{CameraAngles, UiState};
+use crate::structs::{CameraAngles, MagnetFieldArrow, MagneticField, UiState};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_egui::egui::{Id, Sense};
@@ -84,29 +84,35 @@ pub fn ui_setup(
             egui::ScrollArea::vertical().show(ui, |ui| {
                 // Здесь размещаете содержимое, которое может растягиваться вниз
                 let e_slider = ui.add(
-                    egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE)
+                    egui::Slider::new(&mut ui_state.e_value, 0.0001..=constants::E_MAX_VALUE)
                         .text("E"),
                 );
                 let b_slider = ui.add(
-                    egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE)
+                    egui::Slider::new(&mut ui_state.b_value, 0.0001..=constants::B_MAX_VALUE)
                         .text("B"),
                 );
 
-                ui.horizontal(|ui| {
-                    ui.label("φ: ");
-                    ui.text_edit_singleline(&mut ui_state.phi_label);
-                });
+                // ui.horizontal(|ui| {
+                // ui.label("φ: ");
+                // ui.text_edit_singleline(&mut ui_state.phi_label);
+                // });
+                let phi_slider =
+                    ui.add(egui::Slider::new(&mut ui_state.phi_value, -90.0..=90.0).text("φ"));
 
-                ui.horizontal(|ui| {
-                    ui.label("θ: ");
-                    ui.text_edit_singleline(&mut ui_state.theta_label);
-                });
+                // ui.horizontal(|ui| {
+                // ui.label("θ: ");
+                // ui.text_edit_singleline(&mut ui_state.theta_label);
+                // });
+                let theta_slider =
+                    ui.add(egui::Slider::new(&mut ui_state.theta_value, -180.0..=180.0).text("θ"));
 
                 if ui
                     .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
                     .clicked()
                     || e_slider.dragged()
                     || b_slider.dragged()
+                    || phi_slider.dragged()
+                    || theta_slider.dragged()
                 {
                     ui_state.is_window_focused = true;
                 }
@@ -139,4 +145,21 @@ pub fn change_background_color(
     if input.just_pressed(KeyCode::F2) {
         clear_color.0 = Color::ANTIQUE_WHITE;
     }
+}
+
+pub fn update_magnet_arrow(
+    mut arrow: Query<&mut Transform, With<MagnetFieldArrow>>,
+    ui_state: Res<UiState>,
+    camera: Query<&Transform, (With<Camera3d>, Without<MagnetFieldArrow>)>,
+) {
+    let camera_transform = camera.single();
+    let camera_position = camera_transform.translation;
+    let offset = Vec3::new(1.0, -0.5, -2.0);
+    let offset = camera_transform.rotation * offset;
+
+    let mut arrow = arrow.single_mut();
+
+    arrow.translation = camera_position + offset;
+    arrow.rotation = Quat::from_rotation_y(ui_state.theta_value.to_radians())
+        * Quat::from_rotation_x(ui_state.phi_value.to_radians());
 }

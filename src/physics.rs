@@ -199,3 +199,31 @@ pub fn electon_repulsion(
         velocity2.0 -= force * time.delta_seconds();
     }
 }
+
+pub fn update_magnetic_field(
+    ui_input: Res<crate::structs::UiState>,
+    mut magnetic_fields: Query<&mut MagneticField>,
+) {
+    let phi = ui_input.phi_value.to_radians();
+    let theta = ui_input.theta_value.to_radians();
+    let b_value = ui_input.b_value;
+
+    for mut field in magnetic_fields.iter_mut() {
+        field.0 = Vec3::new(
+            b_value * theta.sin() * phi.cos(),
+            b_value * theta.sin() * phi.sin(),
+            b_value * theta.cos(),
+        );
+    }
+}
+
+pub fn update_electric_field(
+    ui_input: Res<crate::structs::UiState>,
+    mut plate_cathodes: Query<&mut PlateCathode>,
+) {
+    let e_value = ui_input.e_value;
+
+    for mut cathode in plate_cathodes.iter_mut() {
+        cathode.e_field = e_value;
+    }
+}

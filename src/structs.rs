@@ -37,11 +37,15 @@ pub struct PlateDestructionField {
 }
 
 
-#[derive(Default, Resource)]
+#[derive(Resource)]
 pub struct UiState {
-    pub phi_label: String,
-    pub theta_label: String,
+    pub phi_value: f32,
+    pub theta_value: f32,
     pub e_value: f32,
     pub b_value: f32,
     pub is_window_focused: bool
 }
+
+#[derive(Component)]
+pub struct MagnetFieldArrow;
+
