@@ -75,45 +75,51 @@ pub fn ui_setup(
     ui_state.is_window_focused = false;
 
     let window_response = egui::Window::new("Settings")
-        .max_width(constants::SETTINGS_WINDOW_WIDTH)
+        .max_width(constants::SETTINGS_WINDOW_WIDTH * 3.0)
         .default_width(constants::SETTINGS_WINDOW_WIDTH)
+        .max_height(constants::SETTINGS_WINDOW_HEIGHT * 5.0)
         .default_height(constants::SETTINGS_WINDOW_HEIGHT)
         .resizable(true)
         .show(ctx.ctx_mut(), |ui| {
-            let e_slider = ui.add(
-                egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE).text("E"),
-            );
-            let b_slider = ui.add(
-                egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE).text("B"),
-            );
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                // Здесь размещаете содержимое, которое может растягиваться вниз
+                let e_slider = ui.add(
+                    egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE)
+                        .text("E"),
+                );
+                let b_slider = ui.add(
+                    egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE)
+                        .text("B"),
+                );
 
-            ui.horizontal(|ui| {
-                ui.label("φ: ");
-                ui.text_edit_singleline(&mut ui_state.phi_label);
+                ui.horizontal(|ui| {
+                    ui.label("φ: ");
+                    ui.text_edit_singleline(&mut ui_state.phi_label);
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("θ: ");
+                    ui.text_edit_singleline(&mut ui_state.theta_label);
+                });
+
+                if ui
+                    .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
+                    .clicked()
+                    || e_slider.dragged()
+                    || b_slider.dragged()
+                {
+                    ui_state.is_window_focused = true;
+                }
+
+                if ui.button("Change colour").clicked() {
+                    clear_color.0 = match clear_color.0 {
+                        Color::DARK_GRAY => Color::ANTIQUE_WHITE,
+                        Color::ANTIQUE_WHITE => Color::WHITE,
+                        Color::WHITE => Color::DARK_GRAY,
+                        _ => Color::WHITE,
+                    };
+                }
             });
-
-            ui.horizontal(|ui| {
-                ui.label("θ: ");
-                ui.text_edit_singleline(&mut ui_state.theta_label);
-            });
-
-            if ui
-                .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
-                .clicked()
-                || e_slider.dragged()
-                || b_slider.dragged()
-            {
-                ui_state.is_window_focused = true;
-            }
-
-            if ui.button("Change colour").clicked() {
-                clear_color.0 = match clear_color.0 {
-                    Color::DARK_GRAY => Color::ANTIQUE_WHITE,
-                    Color::ANTIQUE_WHITE => Color::WHITE,
-                    Color::WHITE => Color::DARK_GRAY,
-                    _ => Color::WHITE,
-                };
-            }
         })
         .unwrap()
         .response;
