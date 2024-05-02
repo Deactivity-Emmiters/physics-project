@@ -77,6 +77,8 @@ pub fn ui_setup(
     let window_response = egui::Window::new("Settings")
         .max_width(constants::SETTINGS_WINDOW_WIDTH)
         .default_width(constants::SETTINGS_WINDOW_WIDTH)
+        .default_height(constants::SETTINGS_WINDOW_HEIGHT)
+        .resizable(true)
         .show(ctx.ctx_mut(), |ui| {
             let e_slider = ui.add(
                 egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE).text("E"),
@@ -85,13 +87,6 @@ pub fn ui_setup(
                 egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE).text("B"),
             );
 
-
-            if ui
-            .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
-            .clicked()
-        {
-            ui_state.is_window_focused = true;
-        }
             ui.horizontal(|ui| {
                 ui.label("φ: ");
                 ui.text_edit_singleline(&mut ui_state.phi_label);
@@ -103,8 +98,8 @@ pub fn ui_setup(
             });
 
             if ui
-                .interact(ui.max_rect(), Id::new("CUM"), Sense::drag())
-                .dragged()
+                .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
+                .clicked()
                 || e_slider.dragged()
                 || b_slider.dragged()
             {
