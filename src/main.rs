@@ -10,6 +10,7 @@ use bevy_egui::EguiPlugin;
 use physics::{move_by_magnetic_fields};
 use structs::{CameraAngles, Electron, MagneticField, SpawnTimer, UiState, Velocity};
 use ui::{camera_controls, change_background_color, ui_setup};
+use crate::physics::move_by_velocity;
 
 fn main() {
     App::new()
@@ -29,7 +30,7 @@ fn main() {
             FixedUpdate,
             (
                 spawn_electrons,
-                // move_by_velocity,
+                move_by_velocity,
                 // apply_gravity,
                 move_by_magnetic_fields,
             ),
