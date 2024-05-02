@@ -9,7 +9,7 @@ use crate::structs::{Plate, PlateCathode};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, move_by_magnetic_fields};
+use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, electon_repulsion, move_by_magnetic_fields};
 use structs::{
     CameraAngles, Electron, MagneticField, PlateDestructionField, SpawnTimer, UiState, Velocity,
 };
@@ -22,10 +22,10 @@ fn main() {
         .add_plugins(LogDiagnosticsPlugin::default())
         .insert_resource(ClearColor(Color::rgb(255.0, 255.0, 255.0)))
         .insert_resource(structs::SpawnTimer(Timer::from_seconds(
-            0.5,
+            0.1,
             TimerMode::Repeating,
         )))
-        .insert_resource(Time::<Fixed>::from_hz(2000.0))
+        .insert_resource(Time::<Fixed>::from_hz(500.0))
         .init_resource::<UiState>()
         .add_plugins(EguiPlugin)
         .add_systems(Startup, setup)
@@ -39,6 +39,7 @@ fn main() {
                 apply_cathode_electric_field,
                 apply_desruction_field,
                 cathodes_spawn_electrons,
+                electon_repulsion,
             ),
         )
         .add_systems(Update, camera_controls)
@@ -82,19 +83,26 @@ fn setup(
 
     ambient_light.brightness = 400.0;
 
+    const HEIGHT: f32 = 200.0;
+    const WIDTH: f32 = 80.0;
+    const CATHODE_POS: Vec3 = Vec3::new(15.0, 0.0, 0.0);
+    let cathode_rot: Quat = Quat::from_rotation_y(0.5 * std::f32::consts::PI);
+    const ANODE_POS: Vec3 = Vec3::new(-15.0, 0.0, 0.0);
+    let anode_rot: Quat = Quat::from_rotation_y(0.5 * std::f32::consts::PI);
+
     // cathode plate
     let plate_cathode = PlateCathode {
         e_field: 10.0,
-        emmisivness: 10,
+        emmisivness: 80,
     };
     let plate = Plate {
-        height: 200.0,
-        width: 30.0,
+        height: HEIGHT,
+        width: WIDTH,
         depth: 1.0,
     };
     let plate_transform = Transform {
-        translation: Vec3::new(10.0, 0.0, 0.0),
-        rotation: Quat::from_rotation_y(0.5 * std::f32::consts::PI),
+        translation: CATHODE_POS,
+        rotation: cathode_rot,
         ..default()
     };
     let destruct_field = PlateDestructionField { depth: 0.2 };
@@ -114,6 +122,113 @@ fn setup(
         plate_cathode,
         plate,
         destruct_field,
+    ));
+
+    // anode plate
+    let plate = Plate {
+        height: HEIGHT,
+        width: WIDTH,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: ANODE_POS,
+        rotation: anode_rot,
+        ..default()
+    };
+    let destruct_field = PlateDestructionField { depth: 0.8 };
+    let mesh = meshes.add(Mesh::from(Cuboid::new(
+        plate.width,
+        plate.height,
+        plate.depth,
+    )));
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material: materials.add(Color::rgb(1.0, 0.0, 0.0)),
+            transform: plate_transform,
+            ..Default::default()
+        },
+        plate,
+        destruct_field,
+    ));
+
+    // bounding box
+    let plate = Plate {
+        height: 1000000.0,
+        width: 1000000.0,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: Vec3::new(0.0, 0.0, WIDTH / 2.0),
+        ..default()
+    };
+    commands.spawn((
+        plate_transform,
+        plate,
+        PlateDestructionField { depth: 1.0 },
+    ));
+
+    let plate = Plate {
+        height: 1000000.0,
+        width: 1000000.0,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: Vec3::new(0.0, 0.0, -WIDTH / 2.0),
+        ..default()
+    };
+    commands.spawn((
+        plate_transform,
+        plate,
+        PlateDestructionField { depth: 1.0 },
+    ));
+
+    let plate = Plate {
+        height: 1000000.0,
+        width: 1000000.0,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: Vec3::new(0.0, HEIGHT / 2.0, 0.0),
+        rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
+        ..default()
+    };
+    commands.spawn((
+        plate_transform,
+        plate,
+        PlateDestructionField { depth: 1.0 },
+    ));
+
+    let plate = Plate {
+        height: 1000000.0,
+        width: 1000000.0,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
+        rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
+        ..default()
+    };
+    commands.spawn((
+        plate_transform,
+        plate,
+        PlateDestructionField { depth: 1.0 },
+    ));
+
+    let plate = Plate {
+        height: 1000000.0,
+        width: 1000000.0,
+        depth: 1.0,
+    };
+    let plate_transform = Transform {
+        translation: CATHODE_POS + Vec3::new(1.0, 0.0, 0.0),
+        rotation: cathode_rot,
+        ..default()
+    };
+    commands.spawn((
+        plate_transform,
+        plate,
+        PlateDestructionField { depth: 1.0 },
     ));
 }
 

@@ -181,3 +181,21 @@ pub fn cathodes_spawn_electrons(
         }
     }
 }
+
+pub fn electon_repulsion(
+    time: Res<Time>,
+    mut electorns: Query<(&Transform, &mut Velocity), With<Electron>>,
+) {
+    let mut iter = electorns.iter_combinations_mut();
+    while let Some([el1, el2]) = iter.fetch_next() {
+        let (transform1, mut velocity1) = el1;
+        let (transform2, mut velocity2) = el2;
+
+        let rel_pos = transform1.translation - transform2.translation;
+
+        let force = 100.0 / (rel_pos.length_squared()) * rel_pos.normalize();
+
+        velocity1.0 += force * time.delta_seconds();
+        velocity2.0 -= force * time.delta_seconds();
+    }
+}
