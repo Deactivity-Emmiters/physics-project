@@ -1,10 +1,9 @@
-use bevy::input::mouse::MouseMotion;
-use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
-use bevy_egui::egui::{Id, Sense};
 use crate::constants;
 use crate::structs::{CameraAngles, UiState};
-
+use bevy::input::mouse::MouseMotion;
+use bevy::prelude::*;
+use bevy_egui::egui::{Id, Sense};
+use bevy_egui::{egui, EguiContexts};
 
 pub fn camera_controls(
     time: Res<Time>,
@@ -12,7 +11,7 @@ pub fn camera_controls(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     keyboard_buttons: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut Transform, &mut CameraAngles), With<Camera3d>>,
-    ui_state: ResMut<UiState>
+    ui_state: ResMut<UiState>,
 ) {
     if ui_state.is_window_focused {
         return;
@@ -73,16 +72,26 @@ pub fn ui_setup(
     mut ctx: EguiContexts,
     mut clear_color: ResMut<ClearColor>,
 ) {
-
     ui_state.is_window_focused = false;
 
     let window_response = egui::Window::new("Settings")
         .max_width(constants::SETTINGS_WINDOW_WIDTH)
         .default_width(constants::SETTINGS_WINDOW_WIDTH)
         .show(ctx.ctx_mut(), |ui| {
-            let e_slider = ui.add(egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE).text("E"));
-            let b_slider = ui.add(egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE).text("B"));
+            let e_slider = ui.add(
+                egui::Slider::new(&mut ui_state.e_value, 0.0..=constants::E_MAX_VALUE).text("E"),
+            );
+            let b_slider = ui.add(
+                egui::Slider::new(&mut ui_state.b_value, 0.0..=constants::B_MAX_VALUE).text("B"),
+            );
 
+
+            if ui
+            .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
+            .clicked()
+        {
+            ui_state.is_window_focused = true;
+        }
             ui.horizontal(|ui| {
                 ui.label("φ: ");
                 ui.text_edit_singleline(&mut ui_state.phi_label);
@@ -93,9 +102,12 @@ pub fn ui_setup(
                 ui.text_edit_singleline(&mut ui_state.theta_label);
             });
 
-            if ui.interact(ui.max_rect(), Id::new("CUM"), Sense::drag()).dragged() ||
-                e_slider.dragged() ||
-                b_slider.dragged() {
+            if ui
+                .interact(ui.max_rect(), Id::new("CUM"), Sense::drag())
+                .dragged()
+                || e_slider.dragged()
+                || b_slider.dragged()
+            {
                 ui_state.is_window_focused = true;
             }
 
@@ -107,16 +119,19 @@ pub fn ui_setup(
                     _ => Color::WHITE,
                 };
             }
-        }).unwrap().response;
+        })
+        .unwrap()
+        .response;
 
     if window_response.dragged() {
         ui_state.is_window_focused = true;
     }
-
 }
 
-
-pub fn change_background_color(input: Res<ButtonInput<KeyCode>>, mut clear_color: ResMut<ClearColor>) {
+pub fn change_background_color(
+    input: Res<ButtonInput<KeyCode>>,
+    mut clear_color: ResMut<ClearColor>,
+) {
     if input.just_pressed(KeyCode::F1) {
         clear_color.0 = Color::DARK_GRAY;
     }
