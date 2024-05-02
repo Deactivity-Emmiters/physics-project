@@ -9,7 +9,10 @@ use crate::structs::{MagnetFieldArrow, Plate, PlateCathode};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, electon_repulsion, move_by_magnetic_fields, update_electric_field, update_magnetic_field};
+use physics::{
+    apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons,
+    electon_repulsion, move_by_magnetic_fields, update_electric_field, update_magnetic_field,
+};
 use structs::{
     CameraAngles, Electron, MagneticField, PlateDestructionField, SpawnTimer, UiState, Velocity,
 };
@@ -48,10 +51,9 @@ fn main() {
                 electon_repulsion,
                 update_magnetic_field,
                 update_electric_field,
-                update_magnet_arrow,
             ),
         )
-        .add_systems(Update, camera_controls)
+        .add_systems(Update, (camera_controls, update_magnet_arrow))
         .add_systems(Update, ui_setup)
         .add_systems(Update, change_background_color)
         .run();
@@ -171,11 +173,7 @@ fn setup(
         translation: Vec3::new(0.0, 0.0, WIDTH / 2.0),
         ..default()
     };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
+    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
 
     let plate = Plate {
         height: 1000000.0,
@@ -186,11 +184,7 @@ fn setup(
         translation: Vec3::new(0.0, 0.0, -WIDTH / 2.0),
         ..default()
     };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
+    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
 
     let plate = Plate {
         height: 1000000.0,
@@ -202,11 +196,7 @@ fn setup(
         rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
         ..default()
     };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
+    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
 
     let plate = Plate {
         height: 1000000.0,
@@ -218,11 +208,7 @@ fn setup(
         rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
         ..default()
     };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
+    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
 
     let plate = Plate {
         height: 1000000.0,
@@ -234,11 +220,7 @@ fn setup(
         rotation: cathode_rot,
         ..default()
     };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
+    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
 
     // magnet field arrow
     // arrow mesh
@@ -252,7 +234,6 @@ fn setup(
         },
         MagnetFieldArrow,
     ));
-
 }
 
 fn spawn_electrons(
