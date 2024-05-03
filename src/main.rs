@@ -16,7 +16,7 @@ use controls::{
     update_electric_field, update_magnetic_field,
 };
 use physics::{
-    apply_cathode_electric_field, move_by_magnetic_fields,
+    apply_plate_cathode_electric_field, move_by_magnetic_fields,
     electron_repulsion,
 };
 use structs::{
@@ -56,7 +56,7 @@ fn main() {
                 move_by_velocity,
                 // apply_gravity,
                 move_by_magnetic_fields,
-                apply_cathode_electric_field,
+                apply_plate_cathode_electric_field,
                 apply_destruction_field,
                 cathodes_spawn_electrons,
                 electron_repulsion,
@@ -106,6 +106,27 @@ fn setup(
 
     ambient_light.brightness = 400.0;
 
+    // magnet field arrow
+    // arrow mesh
+    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 0.3, 1.0)));
+    let material = materials.add(Color::rgb(0.0, 0.0, 1.0));
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material,
+            ..Default::default()
+        },
+        MagnetFieldArrow,
+    ));
+
+    setup_plate_diode(commands, meshes, materials);
+}
+
+fn setup_plate_diode(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>
+){
     const HEIGHT: f32 = 200.0;
     const WIDTH: f32 = 80.0;
     const CATHODE_POS: Vec3 = Vec3::new(15.0, 0.0, 0.0);
@@ -128,7 +149,6 @@ fn setup(
         rotation: cathode_rot,
         ..default()
     };
-    let destruct_field = PlateDestructionField { depth: 0.2 };
     let mesh = meshes.add(Mesh::from(Cuboid::new(
         plate.width,
         plate.height,
@@ -143,7 +163,7 @@ fn setup(
         },
         plate_cathode,
         plate,
-        destruct_field,
+        PlateDestructionField { depth: 0.2 },
     ));
 
     // anode plate
@@ -157,7 +177,6 @@ fn setup(
         rotation: anode_rot,
         ..default()
     };
-    let destruct_field = PlateDestructionField { depth: 0.8 };
     let mesh = meshes.add(Mesh::from(Cuboid::new(
         plate.width,
         plate.height,
@@ -171,17 +190,26 @@ fn setup(
             ..Default::default()
         },
         plate,
-        destruct_field,
+        PlateDestructionField { depth: 0.8 },
     ));
 
     // bounding box
+    spawn_dp(&mut commands, Vec3::new(0.0, 0.0, WIDTH / 2.0), Quat::default());
+    spawn_dp(&mut commands, Vec3::new(0.0, 0.0, -WIDTH / 2.0), Quat::default());
+    spawn_dp(&mut commands, Vec3::new(0.0, HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+    spawn_dp(&mut commands, Vec3::new(0.0, -HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+    spawn_dp(&mut commands, CATHODE_POS + Vec3::new(1.0, 0.0, 0.0), cathode_rot);
+}
+
+fn spawn_dp(commands: &mut Commands, pos: Vec3, rot: Quat){
     let plate = Plate {
         height: 1000000.0,
         width: 1000000.0,
         depth: 1.0,
     };
     let plate_transform = Transform {
-        translation: Vec3::new(0.0, 0.0, WIDTH / 2.0),
+        translation: pos,
+        rotation: rot,
         ..default()
     };
     commands.spawn((
@@ -189,82 +217,13 @@ fn setup(
         plate,
         PlateDestructionField { depth: 1.0 },
     ));
+}
 
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: Vec3::new(0.0, 0.0, -WIDTH / 2.0),
-        ..default()
-    };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: Vec3::new(0.0, HEIGHT / 2.0, 0.0),
-        rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-        ..default()
-    };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
-        rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-        ..default()
-    };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: CATHODE_POS + Vec3::new(1.0, 0.0, 0.0),
-        rotation: cathode_rot,
-        ..default()
-    };
-    commands.spawn((
-        plate_transform,
-        plate,
-        PlateDestructionField { depth: 1.0 },
-    ));
-
-    // magnet field arrow
-    // arrow mesh
-    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 0.3, 1.0)));
-    let material = materials.add(Color::rgb(0.0, 0.0, 1.0));
-    commands.spawn((
-        PbrBundle {
-            mesh,
-            material,
-            ..Default::default()
-        },
-        MagnetFieldArrow,
-    ));
+fn setup_cylindrical_diode(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>
+){
 
 }
 

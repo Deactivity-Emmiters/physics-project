@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 
-use crate::structs::{
-    Electron, MagneticField, Plate, PlateCathode, PlateDestructionField, Velocity,
-};
+use crate::structs::{CylindricalCathode, Electron, MagneticField, Plate, PlateCathode, PlateDestructionField, Velocity};
 
 pub fn move_by_velocity(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform)>) {
     for (velocity, mut transform) in query.iter_mut() {
@@ -45,9 +43,9 @@ pub fn rotate(vec: Vec3, angle_speed_vec: Vec3, time_delta: f32) -> Vec3 {
 pub fn move_by_magnetic_fields(
     time: Res<Time>,
     fields: Query<&MagneticField>,
-    mut electorns: Query<(&mut Transform, &mut Velocity), With<Electron>>,
+    mut electrons: Query<(&mut Transform, &mut Velocity), With<Electron>>,
 ) {
-    for (mut transform, mut velocity) in electorns.iter_mut() {
+    for (mut transform, mut velocity) in electrons.iter_mut() {
         for field in fields.iter() {
             let acceleration = velocity.0.cross(field.0);
 
@@ -79,13 +77,14 @@ pub fn move_by_magnetic_fields(
     }
 }
 
-pub fn apply_cathode_electric_field(
+
+pub fn apply_plate_cathode_electric_field(
     time: Res<Time>,
     plate_cathodes: Query<(&Transform, &PlateCathode, &Plate), Without<Electron>>,
-    mut electorns: Query<(&mut Transform, &mut Velocity), With<Electron>>,
+    mut electrons: Query<(&mut Transform, &mut Velocity), With<Electron>>,
 ) {
     for (plate_transform, plate_cathode, plate) in plate_cathodes.iter() {
-        for (mut transform, mut velocity) in electorns.iter_mut() {
+        for (mut transform, mut velocity) in electrons.iter_mut() {
             // check if in range
             let rel_electron_pos = transform.translation - plate_transform.translation;
             let rel_electron_pos = plate_transform.rotation.inverse() * rel_electron_pos;
@@ -110,6 +109,14 @@ pub fn apply_cathode_electric_field(
             transform.translation += force * time.delta_seconds() * time.delta_seconds() / 2.0;
         }
     }
+}
+
+pub fn apply_cylindrical_cathode_electric_field(
+    time: Res<Time>,
+    plate_cathodes: Query<(&Transform, &CylindricalCathode, &Plate), Without<Electron>>,
+    mut electrons: Query<(&mut Transform, &mut Velocity), With<Electron>>
+){
+
 }
 
 pub fn electron_repulsion(

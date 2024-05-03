@@ -25,6 +25,12 @@ pub struct PlateCathode {
 }
 
 #[derive(Component)]
+pub struct CylindricalCathode {
+    pub e_field: f32, //?
+    pub emmisivness: u32,
+}
+
+#[derive(Component)]
 pub struct Plate {
     pub height: f32,
     pub width: f32,
