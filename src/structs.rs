@@ -38,7 +38,14 @@ pub struct Plate {
 }
 
 #[derive(Component)]
-pub struct PlateDestructionField {
+pub struct Cylinder{
+    pub inner_radius: f32,
+    pub outer_radius: f32,
+    pub height: f32,
+}
+
+#[derive(Component)]
+pub struct DestructionField {
     pub depth: f32,
 }
 

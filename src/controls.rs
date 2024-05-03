@@ -1,20 +1,26 @@
+use std::f32::consts::PI;
 use bevy::prelude::*;
-use crate::structs::{Electron, MagneticField, Plate, PlateCathode, PlateDestructionField, Velocity};
+use crate::structs::{
+    Electron, MagneticField,
+    Plate, PlateCathode, Cylinder, CylindricalCathode,
+    DestructionField, Velocity
+};
 
 
 pub fn apply_destruction_field(
     mut commands: Commands,
-    plate_fields: Query<(&Transform, &PlateDestructionField, &Plate), Without<Electron>>,
+    plate_fields: Query<(&Transform, &DestructionField, &Plate), Without<Electron>>,
+    cylindrical_fields: Query<(&Transform, &DestructionField, &Cylinder), Without<Electron>>,
     electrons: Query<(Entity, &Transform), With<Electron>>,
 ) {
-    for (plate_transform, plate_destruction_field, plate) in plate_fields.iter() {
+    for (plate_transform, destruction_field, plate) in plate_fields.iter() {
         for (entity, transform) in electrons.iter() {
             // check if in range
             let rel_electron_pos = transform.translation - plate_transform.translation;
             let rel_electron_pos = plate_transform.rotation.inverse() * rel_electron_pos;
             if rel_electron_pos.x.abs() > plate.width / 2.0
                 || rel_electron_pos.y.abs() > plate.height / 2.0
-                || rel_electron_pos.z.abs() > plate_destruction_field.depth
+                || rel_electron_pos.z.abs() > destruction_field.depth
             {
                 continue;
             }
@@ -23,12 +29,28 @@ pub fn apply_destruction_field(
             commands.entity(entity).despawn();
         }
     }
+
+    for (cylinder_transform, destruction_field, cylinder) in cylindrical_fields.iter() {
+        for (entity, transform) in electrons.iter() {
+            // bad code. but we know that both centers of cylinders in position x=0 z=0
+            let rel_electron_pos = (
+                transform.translation.x*transform.translation.x
+                    + transform.translation.z*transform.translation.z
+            ).sqrt();
+            if rel_electron_pos > cylinder.inner_radius  &&
+                rel_electron_pos < cylinder.outer_radius
+            {
+                commands.entity(entity).despawn();
+            }
+        }
+    }
 }
 
 pub fn cathodes_spawn_electrons(
     time: Res<Time>,
     mut spawn_timer: ResMut<crate::structs::SpawnTimer>,
     plate_cathodes: Query<(&Transform, &PlateCathode, &Plate)>,
+    cylindrical_cathodes:  Query<(&Transform, &CylindricalCathode, &Cylinder)>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -60,6 +82,26 @@ pub fn cathodes_spawn_electrons(
                         (rand::random::<f32>() - 0.5) * plate.width,
                         (rand::random::<f32>() - 0.5) * plate.height,
                         (rand::random::<f32>() - 0.5) * plate.depth,
+                    );
+            let velocity = Vec3::new(
+                (rand::random::<f32>() - 0.5) * 10.0,
+                (rand::random::<f32>() - 0.5) * 10.0,
+                (rand::random::<f32>() - 0.5) * 10.0,
+            );
+
+            spawn(position, velocity);
+        }
+    }
+
+    for (cylinder_transform, cylinder_cathode, cylinder) in cylindrical_cathodes.iter() {
+        for _ in 0..cylinder_cathode.emmisivness {
+            let phi = rand::random::<f32>() * 2.0 * PI - PI;
+            let position = cylinder_transform.translation
+                + cylinder_transform.rotation
+                    * Vec3::new(
+                        cylinder.outer_radius * phi.cos(),
+                        (rand::random::<f32>() - 0.5) * cylinder.height,
+                        cylinder.outer_radius * phi.sin(),
                     );
             let velocity = Vec3::new(
                 (rand::random::<f32>() - 0.5) * 10.0,
