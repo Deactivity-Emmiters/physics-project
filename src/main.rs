@@ -1,19 +1,33 @@
 #![allow(dead_code)]
 
 mod constants;
+mod controls;
 mod physics;
 mod structs;
 mod ui;
+
 use crate::physics::move_by_velocity;
 use crate::structs::{MagnetFieldArrow, Plate, PlateCathode};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use physics::{apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons, electon_repulsion, move_by_magnetic_fields, update_electric_field, update_magnetic_field};
-use structs::{
-    CameraAngles, Electron, MagneticField, PlateDestructionField, SpawnTimer, UiState, Velocity,
+use controls::{
+    apply_destruction_field, cathodes_spawn_electrons,
+    update_electric_field, update_magnetic_field,
 };
-use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
+use physics::{
+    apply_cathode_electric_field, move_by_magnetic_fields,
+    electron_repulsion,
+};
+use structs::{
+    PlateDestructionField,
+    Electron, MagneticField, Velocity,
+    SpawnTimer, CameraAngles, UiState,
+};
+use ui::{
+    ui_setup, change_background_color,
+    camera_controls, update_magnet_arrow,
+};
 
 fn main() {
     App::new()
@@ -27,10 +41,10 @@ fn main() {
         )))
         .insert_resource(Time::<Fixed>::from_hz(500.0))
         .insert_resource(UiState {
-            phi_value: 0.0,
-            theta_value: 0.0,
             e_value: 2.0,
             b_value: 1.0,
+            phi_value: 0.0,
+            theta_value: 0.0,
             is_window_focused: false,
         })
         .add_plugins(EguiPlugin)
@@ -43,9 +57,9 @@ fn main() {
                 // apply_gravity,
                 move_by_magnetic_fields,
                 apply_cathode_electric_field,
-                apply_desruction_field,
+                apply_destruction_field,
                 cathodes_spawn_electrons,
-                electon_repulsion,
+                electron_repulsion,
                 update_magnetic_field,
                 update_electric_field,
                 update_magnet_arrow,
@@ -120,7 +134,6 @@ fn setup(
         plate.height,
         plate.depth,
     )));
-
     commands.spawn((
         PbrBundle {
             mesh,
@@ -255,6 +268,7 @@ fn setup(
 
 }
 
+/// Placeholder
 fn spawn_electrons(
     time: Res<Time>,
     mut spawn_timer: ResMut<SpawnTimer>,
