@@ -1,22 +1,34 @@
 #![allow(dead_code)]
 
 mod constants;
+mod controls;
 mod physics;
 mod structs;
 mod ui;
-use crate::physics::move_by_velocity;
-use crate::structs::{MagnetFieldArrow, Plate, PlateCathode};
+
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+use bevy::math;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use controls::{
+    apply_destruction_field, cathodes_spawn_electrons,
+    update_electric_field, update_magnetic_field,
+};
 use physics::{
-    apply_cathode_electric_field, apply_desruction_field, cathodes_spawn_electrons,
-    electon_repulsion, move_by_magnetic_fields, update_electric_field, update_magnetic_field,
+    apply_plate_cathode_electric_field, move_by_magnetic_fields,
+    electron_repulsion,
+    move_by_velocity
 };
 use structs::{
-    CameraAngles, Electron, MagneticField, PlateDestructionField, SpawnTimer, UiState, Velocity,
+    DestructionField,
+    Electron, MagneticField, Velocity,
+    SpawnTimer, CameraAngles, UiState, MagnetFieldArrow,
+    Cylinder, CylindricalCathode, Plate, PlateCathode
 };
-use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
+use ui::{
+    ui_setup, change_background_color,
+    camera_controls, update_magnet_arrow,
+};
 
 fn main() {
     let mut app = App::new();
@@ -30,10 +42,10 @@ fn main() {
         )))
         .insert_resource(Time::<Fixed>::from_hz(100.0))
         .insert_resource(UiState {
-            phi_value: 0.0,
-            theta_value: 0.0,
             e_value: 2.0,
             b_value: 1.0,
+            phi_value: 0.0,
+            theta_value: 0.0,
             is_window_focused: false,
         })
         .add_plugins(EguiPlugin)
@@ -45,10 +57,10 @@ fn main() {
                 move_by_velocity,
                 // apply_gravity,
                 move_by_magnetic_fields,
-                apply_cathode_electric_field,
-                apply_desruction_field,
+                apply_plate_cathode_electric_field,
+                apply_destruction_field,
                 cathodes_spawn_electrons,
-                electon_repulsion,
+                electron_repulsion,
                 update_magnetic_field,
                 update_electric_field,
             ),
@@ -68,6 +80,7 @@ fn setup(
     mut ambient_light: ResMut<AmbientLight>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     commands.spawn((
         Camera3dBundle {
@@ -98,6 +111,28 @@ fn setup(
 
     ambient_light.brightness = 400.0;
 
+    // magnet field arrow
+    // arrow mesh
+    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 0.3, 1.0)));
+    let material = materials.add(Color::rgb(0.0, 0.0, 1.0));
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material,
+            ..Default::default()
+        },
+        MagnetFieldArrow,
+    ));
+
+    //setup_plate_diode(commands, meshes, materials);
+    setup_cylindrical_diode(commands, meshes, materials, asset_server);
+}
+
+fn setup_plate_diode(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>
+){
     const HEIGHT: f32 = 200.0;
     const WIDTH: f32 = 80.0;
     const CATHODE_POS: Vec3 = Vec3::new(15.0, 0.0, 0.0);
@@ -120,13 +155,11 @@ fn setup(
         rotation: cathode_rot,
         ..default()
     };
-    let destruct_field = PlateDestructionField { depth: 0.2 };
     let mesh = meshes.add(Mesh::from(Cuboid::new(
         plate.width,
         plate.height,
         plate.depth,
     )));
-
     commands.spawn((
         PbrBundle {
             mesh,
@@ -136,7 +169,7 @@ fn setup(
         },
         plate_cathode,
         plate,
-        destruct_field,
+        DestructionField { depth: 0.2 },
     ));
 
     // anode plate
@@ -150,7 +183,6 @@ fn setup(
         rotation: anode_rot,
         ..default()
     };
-    let destruct_field = PlateDestructionField { depth: 0.8 };
     let mesh = meshes.add(Mesh::from(Cuboid::new(
         plate.width,
         plate.height,
@@ -164,82 +196,104 @@ fn setup(
             ..Default::default()
         },
         plate,
-        destruct_field,
+        DestructionField { depth: 0.8 },
     ));
 
-    // bounding box
+    // bounding box, destruction panels
+    spawn_dp(&mut commands, Vec3::new(0.0, 0.0, WIDTH / 2.0), Quat::default());
+    spawn_dp(&mut commands, Vec3::new(0.0, 0.0, -WIDTH / 2.0), Quat::default());
+    spawn_dp(&mut commands, Vec3::new(0.0, HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+    spawn_dp(&mut commands, Vec3::new(0.0, -HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+    spawn_dp(&mut commands, CATHODE_POS + Vec3::new(1.0, 0.0, 0.0), cathode_rot);
+}
+
+fn spawn_dp(commands: &mut Commands, pos: Vec3, rot: Quat){
     let plate = Plate {
         height: 1000000.0,
         width: 1000000.0,
         depth: 1.0,
     };
     let plate_transform = Transform {
-        translation: Vec3::new(0.0, 0.0, WIDTH / 2.0),
+        translation: pos,
+        rotation: rot,
         ..default()
     };
-    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: Vec3::new(0.0, 0.0, -WIDTH / 2.0),
-        ..default()
-    };
-    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: Vec3::new(0.0, HEIGHT / 2.0, 0.0),
-        rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-        ..default()
-    };
-    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
-        rotation: Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-        ..default()
-    };
-    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
-
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: CATHODE_POS + Vec3::new(1.0, 0.0, 0.0),
-        rotation: cathode_rot,
-        ..default()
-    };
-    commands.spawn((plate_transform, plate, PlateDestructionField { depth: 1.0 }));
-
-    // magnet field arrow
-    // arrow mesh
-    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 0.3, 1.0)));
-    let material = materials.add(Color::rgb(0.0, 0.0, 1.0));
     commands.spawn((
-        PbrBundle {
-            mesh,
-            material,
-            ..Default::default()
-        },
-        MagnetFieldArrow,
+        plate_transform,
+        plate,
+        DestructionField { depth: 1.0 },
     ));
 }
 
+fn setup_cylindrical_diode(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>
+){
+    const HEIGHT: f32 = 200.0;
+    const WIDTH: f32 = 80.0;
+
+    // cathode cylinder
+    let mesh = meshes.add(Mesh::from(bevy::prelude::Cylinder {
+        radius: 5.0,
+        half_height: HEIGHT / 2.0,
+        ..default()
+    }));
+    let cylindrical_cathode = CylindricalCathode{
+        e_field: 10.0,
+        emmisivness: 80,
+    };
+    let cylinder = Cylinder {
+        inner_radius: 0.0,
+        outer_radius: 5.0,
+        height: HEIGHT
+    };
+    commands.spawn((
+        PbrBundle {
+            mesh,
+            material: materials.add(Color::rgb(0.0, 1.0, 0.0)),
+            transform: Transform{
+                translation: Vec3::new(3.0, 0.0, 0.0),
+                ..default()
+            },
+            ..Default::default()
+        },
+        cylinder,
+        cylindrical_cathode,
+        DestructionField { depth: 0.2 },
+    ));
+
+    // anode cylinder
+
+    // in this model: height = 20, inner_radius: 9.0, outer_radius: 10.0
+    let model = asset_server.load("models/Hole_Cylinder.gltf#Scene0");
+
+    let cylinder = Cylinder {
+        inner_radius: 27.0,
+        outer_radius: 30.0,
+        height: HEIGHT
+    };
+    commands.spawn((
+        SceneBundle {
+            scene: model.clone(),
+            transform: Transform {
+                translation: Vec3::new(0.0, -100.0, 0.0),
+                scale: Vec3::new(3.0, 10.0, 3.0),
+                ..default()
+            },
+            ..default()
+        },
+        cylinder,
+        DestructionField { depth: 0.8 },
+    ));
+
+    // bounding box, destruction panels
+    spawn_dp(&mut commands, Vec3::new(0.0, HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+    spawn_dp(&mut commands, Vec3::new(0.0, -HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+}
+
+/// Placeholder
 fn spawn_electrons(
     time: Res<Time>,
     mut spawn_timer: ResMut<SpawnTimer>,
