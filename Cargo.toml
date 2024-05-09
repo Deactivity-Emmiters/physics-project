@@ -16,6 +16,7 @@ bevy_ecs = "0.13.2"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 bevy = "0.13.2"
 bevy_ecs = "0.13.2"
+web-sys = "0.3.55"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

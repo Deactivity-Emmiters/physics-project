@@ -19,8 +19,8 @@ use structs::{
 use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(LogDiagnosticsPlugin::default())
         .insert_resource(ClearColor(Color::rgb(255.0, 255.0, 255.0)))
@@ -28,7 +28,7 @@ fn main() {
             0.1,
             TimerMode::Repeating,
         )))
-        .insert_resource(Time::<Fixed>::from_hz(500.0))
+        .insert_resource(Time::<Fixed>::from_hz(100.0))
         .insert_resource(UiState {
             phi_value: 0.0,
             theta_value: 0.0,
@@ -53,10 +53,14 @@ fn main() {
                 update_electric_field,
             ),
         )
-        .add_systems(Update, (camera_controls, update_magnet_arrow))
+        .add_systems(Update, (camera_controls, update_magnet_arrow.after(camera_controls)))
         .add_systems(Update, ui_setup)
-        .add_systems(Update, change_background_color)
-        .run();
+        .add_systems(Update, change_background_color);
+
+    #[cfg(target_family = "wasm")]
+    app.add_systems(Startup, update_canvas_size);
+
+    app.run();
 }
 
 fn setup(
@@ -260,4 +264,16 @@ fn spawn_electrons(
         Electron,
         Velocity(Vec3::new(39.0, 0.0, 0.0)),
     ));
+}
+
+#[cfg(target_family = "wasm")]
+fn update_canvas_size(mut window: Query<&mut Window, With<bevy::window::PrimaryWindow>>) {
+    (|| {
+        let mut window = window.get_single_mut().ok()?;
+        let browser_window = web_sys::window()?;
+        let width = browser_window.inner_width().ok()?.as_f64()?;
+        let height = browser_window.inner_height().ok()?.as_f64()?;
+        window.resolution.set(width as f32, height as f32);
+        Some(())
+    })();
 }
