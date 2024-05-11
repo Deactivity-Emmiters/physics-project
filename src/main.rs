@@ -7,28 +7,18 @@ mod structs;
 mod ui;
 
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-use bevy::math;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use controls::{
-    apply_destruction_field, cathodes_spawn_electrons,
-    update_electric_field, update_magnetic_field,
+    apply_destruction_field, cathodes_spawn_electrons, update_electric_field, update_magnetic_field,
 };
-use physics::{
-    apply_plate_cathode_electric_field, move_by_magnetic_fields,
-    electron_repulsion,
-    move_by_velocity
-};
+use physics::electrons::{electron_repulsion, update_electron_chunks, ElectronChunks};
+use physics::{apply_plate_cathode_electric_field, move_by_magnetic_fields, move_by_velocity};
 use structs::{
-    DestructionField,
-    Electron, MagneticField, Velocity,
-    SpawnTimer, CameraAngles, UiState, MagnetFieldArrow,
-    Cylinder, CylindricalCathode, Plate, PlateCathode
+    CameraAngles, Cylinder, CylindricalCathode, DestructionField, Electron, MagnetFieldArrow,
+    MagneticField, Plate, PlateCathode, SpawnTimer, UiState, Velocity,
 };
-use ui::{
-    ui_setup, change_background_color,
-    camera_controls, update_magnet_arrow,
-};
+use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
 
 fn main() {
     let mut app = App::new();
@@ -40,7 +30,8 @@ fn main() {
             0.1,
             TimerMode::Repeating,
         )))
-        .insert_resource(Time::<Fixed>::from_hz(100.0))
+        .insert_resource(ElectronChunks::default())
+        .insert_resource(Time::<Fixed>::from_hz(500.0))
         .insert_resource(UiState {
             e_value: 2.0,
             b_value: 1.0,
@@ -60,12 +51,16 @@ fn main() {
                 apply_plate_cathode_electric_field,
                 apply_destruction_field,
                 cathodes_spawn_electrons,
-                electron_repulsion,
+                update_electron_chunks,
+                electron_repulsion.after(update_electron_chunks),
                 update_magnetic_field,
                 update_electric_field,
             ),
         )
-        .add_systems(Update, (camera_controls, update_magnet_arrow.after(camera_controls)))
+        .add_systems(
+            Update,
+            (camera_controls, update_magnet_arrow.after(camera_controls)),
+        )
         .add_systems(Update, ui_setup)
         .add_systems(Update, change_background_color);
 
@@ -131,8 +126,8 @@ fn setup(
 fn setup_plate_diode(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>
-){
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     const HEIGHT: f32 = 200.0;
     const WIDTH: f32 = 80.0;
     const CATHODE_POS: Vec3 = Vec3::new(15.0, 0.0, 0.0);
@@ -200,14 +195,34 @@ fn setup_plate_diode(
     ));
 
     // bounding box, destruction panels
-    spawn_dp(&mut commands, Vec3::new(0.0, 0.0, WIDTH / 2.0), Quat::default());
-    spawn_dp(&mut commands, Vec3::new(0.0, 0.0, -WIDTH / 2.0), Quat::default());
-    spawn_dp(&mut commands, Vec3::new(0.0, HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
-    spawn_dp(&mut commands, Vec3::new(0.0, -HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
-    spawn_dp(&mut commands, CATHODE_POS + Vec3::new(1.0, 0.0, 0.0), cathode_rot);
+    spawn_dp(
+        &mut commands,
+        Vec3::new(0.0, 0.0, WIDTH / 2.0),
+        Quat::default(),
+    );
+    spawn_dp(
+        &mut commands,
+        Vec3::new(0.0, 0.0, -WIDTH / 2.0),
+        Quat::default(),
+    );
+    spawn_dp(
+        &mut commands,
+        Vec3::new(0.0, HEIGHT / 2.0, 0.0),
+        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
+    );
+    spawn_dp(
+        &mut commands,
+        Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
+        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
+    );
+    spawn_dp(
+        &mut commands,
+        CATHODE_POS + Vec3::new(1.0, 0.0, 0.0),
+        cathode_rot,
+    );
 }
 
-fn spawn_dp(commands: &mut Commands, pos: Vec3, rot: Quat){
+fn spawn_dp(commands: &mut Commands, pos: Vec3, rot: Quat) {
     let plate = Plate {
         height: 1000000.0,
         width: 1000000.0,
@@ -218,19 +233,15 @@ fn spawn_dp(commands: &mut Commands, pos: Vec3, rot: Quat){
         rotation: rot,
         ..default()
     };
-    commands.spawn((
-        plate_transform,
-        plate,
-        DestructionField { depth: 1.0 },
-    ));
+    commands.spawn((plate_transform, plate, DestructionField { depth: 1.0 }));
 }
 
 fn setup_cylindrical_diode(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>
-){
+    asset_server: Res<AssetServer>,
+) {
     const HEIGHT: f32 = 200.0;
     const WIDTH: f32 = 80.0;
 
@@ -240,20 +251,20 @@ fn setup_cylindrical_diode(
         half_height: HEIGHT / 2.0,
         ..default()
     }));
-    let cylindrical_cathode = CylindricalCathode{
+    let cylindrical_cathode = CylindricalCathode {
         e_field: 10.0,
         emmisivness: 80,
     };
     let cylinder = Cylinder {
         inner_radius: 0.0,
         outer_radius: 5.0,
-        height: HEIGHT
+        height: HEIGHT,
     };
     commands.spawn((
         PbrBundle {
             mesh,
             material: materials.add(Color::rgb(0.0, 1.0, 0.0)),
-            transform: Transform{
+            transform: Transform {
                 translation: Vec3::new(3.0, 0.0, 0.0),
                 ..default()
             },
@@ -272,7 +283,7 @@ fn setup_cylindrical_diode(
     let cylinder = Cylinder {
         inner_radius: 27.0,
         outer_radius: 30.0,
-        height: HEIGHT
+        height: HEIGHT,
     };
     commands.spawn((
         SceneBundle {
@@ -289,8 +300,16 @@ fn setup_cylindrical_diode(
     ));
 
     // bounding box, destruction panels
-    spawn_dp(&mut commands, Vec3::new(0.0, HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
-    spawn_dp(&mut commands, Vec3::new(0.0, -HEIGHT / 2.0, 0.0), Quat::from_rotation_x(0.5 * std::f32::consts::PI));
+    spawn_dp(
+        &mut commands,
+        Vec3::new(0.0, HEIGHT / 2.0, 0.0),
+        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
+    );
+    spawn_dp(
+        &mut commands,
+        Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
+        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
+    );
 }
 
 /// Placeholder

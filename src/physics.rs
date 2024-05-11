@@ -3,6 +3,8 @@ use bevy::prelude::*;
 
 use crate::structs::{CylindricalCathode, Electron, MagneticField, Plate, PlateCathode, DestructionField, Velocity};
 
+pub mod electrons;
+
 pub fn move_by_velocity(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform)>) {
     for (velocity, mut transform) in query.iter_mut() {
         transform.translation += velocity.0 * time.delta_seconds();
@@ -122,22 +124,4 @@ pub fn apply_cylindrical_cathode_electric_field(
     let ro: f32 = 2.0; // const. surface charge of the cylinder.
     let e_field = 4.0 * PI * ro * (r + r2*r2/r); //
     let e_force = e_field * 1.60217663; // 1.60217663 × 10-19 - electron charge
-}
-
-pub fn electron_repulsion(
-    time: Res<Time>,
-    mut electrons: Query<(&Transform, &mut Velocity), With<Electron>>,
-) {
-    let mut iter = electrons.iter_combinations_mut();
-    while let Some([el1, el2]) = iter.fetch_next() {
-        let (transform1, mut velocity1) = el1;
-        let (transform2, mut velocity2) = el2;
-
-        let rel_pos = transform1.translation - transform2.translation;
-
-        let force = 100.0 / (rel_pos.length_squared()) * rel_pos.normalize();
-
-        velocity1.0 += force * time.delta_seconds();
-        velocity2.0 -= force * time.delta_seconds();
-    }
 }
