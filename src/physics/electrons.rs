@@ -46,6 +46,12 @@ pub fn electron_repulsion(
 ) {
     let chunks = &chunks.0;
     for chunk in chunks.iter() {
+        let neighbor_chunks = (-1..=1)
+            .flat_map(|x| (-1..=1).flat_map(move |y| (-1..=1).map(move |z| IVec3::new(x, y, z))))
+            .filter(|v| *v != IVec3::new(0, 0, 0))
+            .map(|v| v + *chunk.0)
+            .filter_map(|v| chunks.get(&v))
+            .collect::<Vec<_>>();
         for electron in chunk.1 {
             let mut electron_velocity = match electrons.get_mut(electron.id) {
                 Ok(v) => v,
@@ -54,17 +60,9 @@ pub fn electron_repulsion(
                     continue;
                 }
             };
-            for other in [-1, 0, 1]
+            for other in neighbor_chunks
                 .iter()
-                .flat_map(|x| {
-                    [-1, 0, 1]
-                        .iter()
-                        .flat_map(|y| [-1, 0, 1].map(|z| IVec3::new(*x, *y, z)))
-                })
-                .filter(|v| *v != IVec3::new(0, 0, 0))
-                .map(|v| v + *chunk.0)
-                .filter_map(|v| chunks.get(&v))
-                .flatten()
+                .flat_map(|v| *v)
                 .chain(chunk.1.iter().filter(|e| e.id != electron.id))
             {
                 let rel_pos = other.position - electron.position;
