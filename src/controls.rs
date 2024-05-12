@@ -32,10 +32,10 @@ pub fn apply_destruction_field(
 
     for (cylinder_transform, destruction_field, cylinder) in cylindrical_fields.iter() {
         for (entity, transform) in electrons.iter() {
-            // bad code. but we know that both centers of cylinders in position x=3 z=0
             let rel_electron_pos = (
-                (transform.translation.x - 3.0)*(transform.translation.x-3.0)
-                    + transform.translation.z*transform.translation.z
+                    (transform.translation.x - cylinder_transform.translation.x) *
+                        (transform.translation.x - cylinder_transform.translation.x)
+                        + transform.translation.z*transform.translation.z
             ).sqrt();
             if rel_electron_pos > cylinder.inner_radius  &&
                 rel_electron_pos < cylinder.outer_radius
