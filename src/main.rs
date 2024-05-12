@@ -108,7 +108,7 @@ fn setup(
 
     // magnet field arrow
     // arrow mesh
-    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 0.3, 1.0)));
+    let mesh = meshes.add(Mesh::from(Cuboid::new(0.3, 1.0, 0.3)));
     let material = materials.add(Color::rgb(0.0, 0.0, 1.0));
     commands.spawn((
         PbrBundle {

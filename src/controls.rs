@@ -125,9 +125,9 @@ pub fn update_magnetic_field(
 
     for mut field in magnetic_fields.iter_mut() {
         field.0 = Vec3::new(
-            b_value * theta.sin() * phi.cos(),
             b_value * theta.sin() * phi.sin(),
             b_value * theta.cos(),
+            b_value * theta.sin() * phi.cos(),
         );
     }
 }

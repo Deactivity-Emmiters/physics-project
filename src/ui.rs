@@ -97,14 +97,14 @@ pub fn ui_setup(
                 // ui.text_edit_singleline(&mut ui_state.phi_label);
                 // });
                 let phi_slider =
-                    ui.add(egui::Slider::new(&mut ui_state.phi_value, -90.0..=90.0).text("φ"));
+                    ui.add(egui::Slider::new(&mut ui_state.phi_value, -180.0..=180.0).text("φ"));
 
                 // ui.horizontal(|ui| {
                 // ui.label("θ: ");
                 // ui.text_edit_singleline(&mut ui_state.theta_label);
                 // });
                 let theta_slider =
-                    ui.add(egui::Slider::new(&mut ui_state.theta_value, -180.0..=180.0).text("θ"));
+                    ui.add(egui::Slider::new(&mut ui_state.theta_value, -90.0..=90.0).text("θ"));
 
                 if ui
                     .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
@@ -160,6 +160,6 @@ pub fn update_magnet_arrow(
     let mut arrow = arrow.single_mut();
 
     arrow.translation = camera_position + offset;
-    arrow.rotation = Quat::from_rotation_y(ui_state.theta_value.to_radians())
-        * Quat::from_rotation_x(ui_state.phi_value.to_radians());
+    arrow.rotation = Quat::from_rotation_y(ui_state.phi_value.to_radians())
+        * Quat::from_rotation_x(ui_state.theta_value.to_radians());
 }
