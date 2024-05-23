@@ -200,7 +200,7 @@ fn setup_cylindrical_diode(
             mesh,
             material: materials.add(Color::rgb(0.0, 1.0, 0.0)),
             transform: Transform {
-                translation: Vec3::new(3.0, 0.0, 0.0),
+                translation: Vec3::new(0.0, 0.0, 0.0),
                 ..default()
             },
             ..Default::default()
@@ -214,7 +214,7 @@ fn setup_cylindrical_diode(
     // anode cylinder
 
     // in this model: height = 20, inner_radius: 9.0, outer_radius: 10.0
-    let model = asset_server.load("models/Hole_Cylinder.gltf#Scene0");
+    let mesh = asset_server.load("models/hollow_cylinder.glb#Mesh0/Primitive0");
 
     let cylinder = Cylinder {
         inner_radius: 27.0,
@@ -222,10 +222,11 @@ fn setup_cylindrical_diode(
         height: HEIGHT,
     };
     commands.spawn((
-        SceneBundle {
-            scene: model.clone(),
+        PbrBundle {
+            mesh,
+            material: materials.add(Color::rgb(1.0, 0.843, 0.0)),
             transform: Transform {
-                translation: Vec3::new(0.0, -100.0, 0.0),
+                translation: Vec3::new(0.0, 0.0, 0.0),
                 scale: Vec3::new(3.0, 10.0, 3.0),
                 ..default()
             },

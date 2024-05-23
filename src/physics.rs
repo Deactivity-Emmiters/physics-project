@@ -138,7 +138,7 @@ pub fn apply_cylindrical_cathode_electric_field(
             let e_field = 4.0 * PI * ro * (r + r2*r2/r); // resulting value of electric field
             let e_force = e_field * 1.60217663; // 1.60217663 × 10^(-19) - electron charge
 
-            let vec_force = e_force * Vec3::new(transform.translation.x - 3.0, 0.0, transform.translation.z);
+            let vec_force = e_force * Vec3::new(transform.translation.x, 0.0, transform.translation.z);
 
             velocity.0 += vec_force * time.delta_seconds();
             transform.translation += vec_force * time.delta_seconds() * time.delta_seconds() / 2.0;
