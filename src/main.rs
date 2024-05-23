@@ -3,6 +3,7 @@
 mod constants;
 mod controls;
 mod physics;
+mod scenes;
 mod structs;
 mod ui;
 
@@ -14,10 +15,7 @@ use controls::{
 };
 use physics::electrons::{electron_repulsion, update_electron_chunks, ElectronChunks};
 use physics::{apply_plate_cathode_electric_field, move_by_magnetic_fields, move_by_velocity};
-use structs::{
-    CameraAngles, Cylinder, CylindricalCathode, DestructionField, Electron, MagnetFieldArrow,
-    MagneticField, Plate, PlateCathode, SpawnTimer, UiState, Velocity,
-};
+use structs::{CameraAngles, MagnetFieldArrow, MagneticField, UiState};
 use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
 
 fn main() {
@@ -25,6 +23,7 @@ fn main() {
     app.add_plugins(DefaultPlugins)
         .add_plugins(FrameTimeDiagnosticsPlugin)
         .add_plugins(LogDiagnosticsPlugin::default())
+        .add_plugins(scenes::scenes_plugin)
         .insert_resource(ClearColor(Color::rgb(255.0, 255.0, 255.0)))
         .insert_resource(structs::SpawnTimer(Timer::from_seconds(
             0.1,
@@ -75,7 +74,6 @@ fn setup(
     mut ambient_light: ResMut<AmbientLight>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
 ) {
     commands.spawn((
         Camera3dBundle {
@@ -117,225 +115,6 @@ fn setup(
             ..Default::default()
         },
         MagnetFieldArrow,
-    ));
-
-    //setup_plate_diode(commands, meshes, materials);
-    setup_cylindrical_diode(commands, meshes, materials, asset_server);
-}
-
-fn setup_plate_diode(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    const HEIGHT: f32 = 200.0;
-    const WIDTH: f32 = 80.0;
-    const CATHODE_POS: Vec3 = Vec3::new(15.0, 0.0, 0.0);
-    let cathode_rot: Quat = Quat::from_rotation_y(0.5 * std::f32::consts::PI);
-    const ANODE_POS: Vec3 = Vec3::new(-15.0, 0.0, 0.0);
-    let anode_rot: Quat = Quat::from_rotation_y(0.5 * std::f32::consts::PI);
-
-    // cathode plate
-    let plate_cathode = PlateCathode {
-        e_field: 10.0,
-        emmisivness: 80,
-    };
-    let plate = Plate {
-        height: HEIGHT,
-        width: WIDTH,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: CATHODE_POS,
-        rotation: cathode_rot,
-        ..default()
-    };
-    let mesh = meshes.add(Mesh::from(Cuboid::new(
-        plate.width,
-        plate.height,
-        plate.depth,
-    )));
-    commands.spawn((
-        PbrBundle {
-            mesh,
-            material: materials.add(Color::rgb(0.0, 1.0, 0.0)),
-            transform: plate_transform,
-            ..Default::default()
-        },
-        plate_cathode,
-        plate,
-        DestructionField { depth: 0.2 },
-    ));
-
-    // anode plate
-    let plate = Plate {
-        height: HEIGHT,
-        width: WIDTH,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: ANODE_POS,
-        rotation: anode_rot,
-        ..default()
-    };
-    let mesh = meshes.add(Mesh::from(Cuboid::new(
-        plate.width,
-        plate.height,
-        plate.depth,
-    )));
-    commands.spawn((
-        PbrBundle {
-            mesh,
-            material: materials.add(Color::rgb(1.0, 0.0, 0.0)),
-            transform: plate_transform,
-            ..Default::default()
-        },
-        plate,
-        DestructionField { depth: 0.8 },
-    ));
-
-    // bounding box, destruction panels
-    spawn_dp(
-        &mut commands,
-        Vec3::new(0.0, 0.0, WIDTH / 2.0),
-        Quat::default(),
-    );
-    spawn_dp(
-        &mut commands,
-        Vec3::new(0.0, 0.0, -WIDTH / 2.0),
-        Quat::default(),
-    );
-    spawn_dp(
-        &mut commands,
-        Vec3::new(0.0, HEIGHT / 2.0, 0.0),
-        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-    );
-    spawn_dp(
-        &mut commands,
-        Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
-        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-    );
-    spawn_dp(
-        &mut commands,
-        CATHODE_POS + Vec3::new(1.0, 0.0, 0.0),
-        cathode_rot,
-    );
-}
-
-fn spawn_dp(commands: &mut Commands, pos: Vec3, rot: Quat) {
-    let plate = Plate {
-        height: 1000000.0,
-        width: 1000000.0,
-        depth: 1.0,
-    };
-    let plate_transform = Transform {
-        translation: pos,
-        rotation: rot,
-        ..default()
-    };
-    commands.spawn((plate_transform, plate, DestructionField { depth: 1.0 }));
-}
-
-fn setup_cylindrical_diode(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    const HEIGHT: f32 = 200.0;
-    const WIDTH: f32 = 80.0;
-
-    // cathode cylinder
-    let mesh = meshes.add(Mesh::from(bevy::prelude::Cylinder {
-        radius: 5.0,
-        half_height: HEIGHT / 2.0,
-        ..default()
-    }));
-    let cylindrical_cathode = CylindricalCathode {
-        e_field: 10.0,
-        emmisivness: 80,
-    };
-    let cylinder = Cylinder {
-        inner_radius: 0.0,
-        outer_radius: 5.0,
-        height: HEIGHT,
-    };
-    commands.spawn((
-        PbrBundle {
-            mesh,
-            material: materials.add(Color::rgb(0.0, 1.0, 0.0)),
-            transform: Transform {
-                translation: Vec3::new(3.0, 0.0, 0.0),
-                ..default()
-            },
-            ..Default::default()
-        },
-        cylinder,
-        cylindrical_cathode,
-        DestructionField { depth: 0.2 },
-    ));
-
-    // anode cylinder
-
-    // in this model: height = 20, inner_radius: 9.0, outer_radius: 10.0
-    let model = asset_server.load("models/Hole_Cylinder.gltf#Scene0");
-
-    let cylinder = Cylinder {
-        inner_radius: 27.0,
-        outer_radius: 30.0,
-        height: HEIGHT,
-    };
-    commands.spawn((
-        SceneBundle {
-            scene: model.clone(),
-            transform: Transform {
-                translation: Vec3::new(0.0, -100.0, 0.0),
-                scale: Vec3::new(3.0, 10.0, 3.0),
-                ..default()
-            },
-            ..default()
-        },
-        cylinder,
-        DestructionField { depth: 0.8 },
-    ));
-
-    // bounding box, destruction panels
-    spawn_dp(
-        &mut commands,
-        Vec3::new(0.0, HEIGHT / 2.0, 0.0),
-        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-    );
-    spawn_dp(
-        &mut commands,
-        Vec3::new(0.0, -HEIGHT / 2.0, 0.0),
-        Quat::from_rotation_x(0.5 * std::f32::consts::PI),
-    );
-}
-
-/// Placeholder
-fn spawn_electrons(
-    time: Res<Time>,
-    mut spawn_timer: ResMut<SpawnTimer>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    if !spawn_timer.0.tick(time.delta()).just_finished() {
-        return;
-    }
-    let mesh = meshes.add(Sphere::new(1.0).mesh().ico(3).unwrap());
-
-    let position = Vec3::new(0.0, 0.0, 0.0);
-
-    commands.spawn((
-        PbrBundle {
-            mesh,
-            material: materials.add(Color::rgb(0.0, 0.0, 1.0)),
-            transform: Transform::from_translation(position),
-            ..Default::default()
-        },
-        Electron,
-        Velocity(Vec3::new(39.0, 0.0, 0.0)),
     ));
 }
 
