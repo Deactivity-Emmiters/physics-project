@@ -72,6 +72,8 @@ pub fn ui_setup(
     mut ui_state: ResMut<UiState>,
     mut ctx: EguiContexts,
     mut clear_color: ResMut<ClearColor>,
+    state: Res<State<SelectedScene>>,
+    mut next_state: ResMut<NextState<SelectedScene>>,
 ) {
     ui_state.is_window_focused = false;
 
@@ -127,7 +129,12 @@ pub fn ui_setup(
                     };
                 }
 
-                ui.label("Press 1 to change diode type");
+                if ui.button("Change diode type").clicked() {
+                    match state.get() {
+                        SelectedScene::CylindricalDiode => next_state.set(SelectedScene::PlateDiode),
+                        SelectedScene::PlateDiode => next_state.set(SelectedScene::CylindricalDiode),
+                    }
+                }
             });
         })
         .unwrap()
