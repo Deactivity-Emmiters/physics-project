@@ -27,7 +27,10 @@ pub fn scenes_plugin(app: &mut App) {
             OnExit(SelectedScene::CylindricalDiode),
             despawn_scene::<CylindricalDiodeSceneEntity>,
         )
-        .add_systems(OnEnter(SelectedScene::PlateDiode), setup_plate_diode)
+        .add_systems(
+            OnEnter(SelectedScene::PlateDiode),
+            setup_plate_diode
+        )
         .add_systems(
             OnExit(SelectedScene::PlateDiode),
             despawn_scene::<PlateDiodeSceneEntity>,
@@ -178,7 +181,7 @@ fn setup_cylindrical_diode(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    const HEIGHT: f32 = 200.0;
+    const HEIGHT: f32 = 100.0;
     const WIDTH: f32 = 80.0;
 
     // cathode cylinder
@@ -227,7 +230,7 @@ fn setup_cylindrical_diode(
             material: materials.add(Color::rgb(1.0, 0.843, 0.0)),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
-                scale: Vec3::new(3.0, 10.0, 3.0),
+                scale: Vec3::new(3.0, 5.0, 3.0),
                 ..default()
             },
             ..default()
