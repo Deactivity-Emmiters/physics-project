@@ -135,10 +135,14 @@ pub fn update_magnetic_field(
 pub fn update_electric_field(
     ui_input: Res<crate::structs::UiState>,
     mut plate_cathodes: Query<&mut PlateCathode>,
+    mut cylindrical_cathodes: Query<&mut CylindricalCathode>,
 ) {
     let e_value = ui_input.e_value;
 
     for mut cathode in plate_cathodes.iter_mut() {
+        cathode.e_field = e_value;
+    }
+    for mut cathode in cylindrical_cathodes.iter_mut() {
         cathode.e_field = e_value;
     }
 }

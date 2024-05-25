@@ -1,11 +1,10 @@
-use std::f32::consts::PI;
 use bevy::prelude::*;
 
 use crate::structs::{
     Cylinder, CylindricalCathode,
     Electron, MagneticField,
     Plate, PlateCathode,
-    DestructionField, Velocity
+    Velocity
 };
 
 pub mod electrons;
@@ -134,11 +133,11 @@ pub fn apply_cylindrical_cathode_electric_field(
                 ).sqrt(); // electron position by radius
 
             let r2 = cylinder.inner_radius; // radius of anode (big cylinder)
-            let ro = cylindrical_cathode.emmisivness as f32; // const: surface charge of the cylinder
-            let e_field = 4.0 * PI * ro * (r + r2*r2/r); // resulting value of electric field
-            let e_force = e_field * 1.60217663; // 1.60217663 × 10^(-19) - electron charge
+            let ro = cylindrical_cathode.e_field; // surface charge of the cylinder. Taking it as coefficient from ui.
+            let e_field = ro * (r + r2*r2/r); // resulting value of electric field
+            // 4.0 * PI, 1.60217663 × 10^(-19) - electron charge, 9.1093837 × 10^(-31) - mass. Not interesting constants :)
 
-            let vec_force = e_force * Vec3::new(transform.translation.x, 0.0, transform.translation.z);
+            let vec_force = e_field * Vec3::new(transform.translation.x, 0.0, transform.translation.z).normalize();
 
             velocity.0 += vec_force * time.delta_seconds();
             transform.translation += vec_force * time.delta_seconds() * time.delta_seconds() / 2.0;

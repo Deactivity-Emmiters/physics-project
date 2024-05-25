@@ -14,7 +14,10 @@ use controls::{
     apply_destruction_field, cathodes_spawn_electrons, update_electric_field, update_magnetic_field,
 };
 use physics::electrons::{electron_repulsion, update_electron_chunks, ElectronChunks};
-use physics::{apply_plate_cathode_electric_field, move_by_magnetic_fields, move_by_velocity};
+use physics::{
+    apply_plate_cathode_electric_field, apply_cylindrical_cathode_electric_field,
+    move_by_magnetic_fields, move_by_velocity
+};
 use structs::{CameraAngles, MagnetFieldArrow, MagneticField, UiState};
 use ui::{
     camera_controls,
@@ -52,6 +55,7 @@ fn main() {
                 // apply_gravity,
                 move_by_magnetic_fields,
                 apply_plate_cathode_electric_field,
+                apply_cylindrical_cathode_electric_field,
                 apply_destruction_field,
                 cathodes_spawn_electrons,
                 update_electron_chunks,
