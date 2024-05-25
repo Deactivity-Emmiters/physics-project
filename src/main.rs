@@ -16,7 +16,11 @@ use controls::{
 use physics::electrons::{electron_repulsion, update_electron_chunks, ElectronChunks};
 use physics::{apply_plate_cathode_electric_field, move_by_magnetic_fields, move_by_velocity};
 use structs::{CameraAngles, MagnetFieldArrow, MagneticField, UiState};
-use ui::{camera_controls, change_background_color, ui_setup, update_magnet_arrow};
+use ui::{
+    camera_controls,
+    change_background_color, change_diode_type,
+    ui_setup, update_magnet_arrow
+};
 
 fn main() {
     let mut app = App::new();
@@ -61,7 +65,8 @@ fn main() {
             (camera_controls, update_magnet_arrow.after(camera_controls)),
         )
         .add_systems(Update, ui_setup)
-        .add_systems(Update, change_background_color);
+        .add_systems(Update, change_background_color)
+        .add_systems(Update, change_diode_type);
 
     #[cfg(target_family = "wasm")]
     app.add_systems(Startup, update_canvas_size);

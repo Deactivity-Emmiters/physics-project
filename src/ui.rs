@@ -4,6 +4,7 @@ use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy_egui::egui::{Id, Sense};
 use bevy_egui::{egui, EguiContexts};
+use crate::scenes::SelectedScene;
 
 pub fn camera_controls(
     time: Res<Time>,
@@ -125,6 +126,8 @@ pub fn ui_setup(
                         _ => Color::WHITE,
                     };
                 }
+
+                ui.label("Press 1 to change diode type");
             });
         })
         .unwrap()
@@ -144,6 +147,19 @@ pub fn change_background_color(
     }
     if input.just_pressed(KeyCode::F2) {
         clear_color.0 = Color::ANTIQUE_WHITE;
+    }
+}
+
+pub fn change_diode_type(
+    state: Res<State<SelectedScene>>,
+    mut next_state: ResMut<NextState<SelectedScene>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>
+){
+    if keyboard_input.just_pressed(KeyCode::Digit1) {
+        match state.get() {
+            SelectedScene::CylindricalDiode => next_state.set(SelectedScene::PlateDiode),
+            SelectedScene::PlateDiode => next_state.set(SelectedScene::CylindricalDiode),
+        }
     }
 }
 
