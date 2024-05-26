@@ -100,14 +100,14 @@ pub fn ui_setup(
                 // ui.text_edit_singleline(&mut ui_state.phi_label);
                 // });
                 let phi_slider =
-                    ui.add(egui::Slider::new(&mut ui_state.phi_value, -180.0..=180.0).text("φ"));
+                    ui.add(egui::Slider::new(&mut ui_state.phi_value, 0.0..=360.0).text("φ"));
 
                 // ui.horizontal(|ui| {
                 // ui.label("θ: ");
                 // ui.text_edit_singleline(&mut ui_state.theta_label);
                 // });
                 let theta_slider =
-                    ui.add(egui::Slider::new(&mut ui_state.theta_value, -90.0..=90.0).text("θ"));
+                    ui.add(egui::Slider::new(&mut ui_state.theta_value, 0.0..=180.0).text("θ"));
 
                 if ui
                     .interact(ui.max_rect(), Id::new("CUM"), Sense::click())
