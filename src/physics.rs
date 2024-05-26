@@ -15,29 +15,6 @@ pub fn move_by_velocity(time: Res<Time>, mut query: Query<(&Velocity, &mut Trans
     }
 }
 
-/// Placeholder
-pub fn apply_gravity(time: Res<Time>, mut query: Query<(&mut Transform, &mut Velocity)>) {
-    for (mut transform, mut velocity) in query.iter_mut() {
-        accelerate(
-            transform.as_mut(),
-            velocity.as_mut(),
-            Vec3::new(0.0, -9.81, 0.0),
-            time.delta_seconds(),
-        );
-    }
-}
-
-/// Placeholder
-pub fn accelerate(
-    transform: &mut Transform,
-    velocity: &mut Velocity,
-    acceleration: Vec3,
-    time_delta: f32,
-) {
-    velocity.0 += acceleration * time_delta;
-    transform.translation += acceleration * time_delta * time_delta / 2.0;
-}
-
 pub fn rotate(vec: Vec3, angle_speed_vec: Vec3, time_delta: f32) -> Vec3 {
     let angle_speed = angle_speed_vec.length();
     let angle_speed_vec = angle_speed_vec.normalize();
